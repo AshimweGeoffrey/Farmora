@@ -13,30 +13,30 @@
 13         to allow setting breakpoints, to provide hot reload, etc.
 14    -->
 15    <uses-permission android:name="android.permission.INTERNET" />
-15-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/debug/AndroidManifest.xml:6:5-66
-15-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/debug/AndroidManifest.xml:6:22-64
+15-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/debug/AndroidManifest.xml:6:5-66
+15-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/debug/AndroidManifest.xml:6:22-64
 16    <!-- Place permissions HERE, before the application tag -->
 17    <uses-permission android:name="android.permission.BLUETOOTH" />
-17-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:3:5-68
-17-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:3:22-65
+17-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:3:5-68
+17-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:3:22-65
 18    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-18-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:4:5-74
-18-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:4:22-71
+18-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:4:5-74
+18-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:4:22-71
 19    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-19-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:5:5-79
-19-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:5:22-76
+19-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:5:5-79
+19-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:5:22-76
 20    <uses-permission
-20-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:6:5-120
+20-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:6:5-120
 21        android:name="android.permission.BLUETOOTH_SCAN"
-21-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:6:22-70
+21-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:6:22-70
 22        android:usesPermissionFlags="neverForLocation" />
-22-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:6:71-117
+22-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:6:71-117
 23    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-23-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:7:5-76
-23-->/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/AndroidManifest.xml:7:22-73
+23-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:7:5-76
+23-->/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/AndroidManifest.xml:7:22-73
 24    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-24-->[:connectivity_plus] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/connectivity_plus/intermediates/merged_manifest/debug/AndroidManifest.xml:7:5-79
-24-->[:connectivity_plus] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/connectivity_plus/intermediates/merged_manifest/debug/AndroidManifest.xml:7:22-76
+24-->[:connectivity_plus] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/connectivity_plus/intermediates/merged_manifest/debug/AndroidManifest.xml:7:5-79
+24-->[:connectivity_plus] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/connectivity_plus/intermediates/merged_manifest/debug/AndroidManifest.xml:7:22-76
 25
 26    <permission
 26-->[androidx.core:core:1.13.1] /home/micro/.gradle/caches/transforms-3/889ae3adf7a24645889ee22f4dad2cac/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
@@ -81,25 +81,25 @@
 60            android:value="2" />
 61
 62        <service
-62-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:8:9-12:19
+62-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:8:9-12:19
 63            android:name="com.google.firebase.components.ComponentDiscoveryService"
-63-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:8:18-89
+63-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:8:18-89
 64            android:directBootAware="true"
 64-->[com.google.firebase:firebase-common:20.4.3] /home/micro/.gradle/caches/transforms-3/6cc871ff166acfac68302d822b4e6e01/transformed/jetified-firebase-common-20.4.3/AndroidManifest.xml:32:13-43
 65            android:exported="false" >
 65-->[com.google.firebase:firebase-firestore:24.11.0] /home/micro/.gradle/caches/transforms-3/4d377946e8e38840327333270ec8e28e/transformed/jetified-firebase-firestore-24.11.0/AndroidManifest.xml:16:13-37
 66            <meta-data
-66-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:9:13-11:85
+66-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:9:13-11:85
 67                android:name="com.google.firebase.components:io.flutter.plugins.firebase.firestore.FlutterFirebaseFirestoreRegistrar"
-67-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:10:17-134
+67-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:10:17-134
 68                android:value="com.google.firebase.components.ComponentRegistrar" />
-68-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:11:17-82
+68-->[:cloud_firestore] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/cloud_firestore/intermediates/merged_manifest/debug/AndroidManifest.xml:11:17-82
 69            <meta-data
-69-->[:firebase_core] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/firebase_core/intermediates/merged_manifest/debug/AndroidManifest.xml:9:13-11:85
+69-->[:firebase_core] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/firebase_core/intermediates/merged_manifest/debug/AndroidManifest.xml:9:13-11:85
 70                android:name="com.google.firebase.components:io.flutter.plugins.firebase.core.FlutterFirebaseCoreRegistrar"
-70-->[:firebase_core] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/firebase_core/intermediates/merged_manifest/debug/AndroidManifest.xml:10:17-124
+70-->[:firebase_core] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/firebase_core/intermediates/merged_manifest/debug/AndroidManifest.xml:10:17-124
 71                android:value="com.google.firebase.components.ComponentRegistrar" />
-71-->[:firebase_core] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/firebase_core/intermediates/merged_manifest/debug/AndroidManifest.xml:11:17-82
+71-->[:firebase_core] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/firebase_core/intermediates/merged_manifest/debug/AndroidManifest.xml:11:17-82
 72            <meta-data
 72-->[com.google.firebase:firebase-firestore:24.11.0] /home/micro/.gradle/caches/transforms-3/4d377946e8e38840327333270ec8e28e/transformed/jetified-firebase-firestore-24.11.0/AndroidManifest.xml:17:13-19:85
 73                android:name="com.google.firebase.components:com.google.firebase.firestore.FirebaseFirestoreKtxRegistrar"
@@ -127,43 +127,43 @@
 84        </service>
 85
 86        <provider
-86-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:9:9-17:20
+86-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:9:9-17:20
 87            android:name="io.flutter.plugins.imagepicker.ImagePickerFileProvider"
-87-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:10:13-82
+87-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:10:13-82
 88            android:authorities="com.example.famora.flutter.image_provider"
-88-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:11:13-74
+88-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:11:13-74
 89            android:exported="false"
-89-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:12:13-37
+89-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:12:13-37
 90            android:grantUriPermissions="true" >
-90-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:13:13-47
+90-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:13:13-47
 91            <meta-data
-91-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:14:13-16:75
+91-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:14:13-16:75
 92                android:name="android.support.FILE_PROVIDER_PATHS"
-92-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:15:17-67
+92-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:15:17-67
 93                android:resource="@xml/flutter_image_picker_file_paths" />
-93-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:16:17-72
+93-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:16:17-72
 94        </provider> <!-- Trigger Google Play services to install the backported photo picker module. -->
 95        <service
-95-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:19:9-31:19
+95-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:19:9-31:19
 96            android:name="com.google.android.gms.metadata.ModuleDependencies"
-96-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:20:13-78
+96-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:20:13-78
 97            android:enabled="false"
-97-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:21:13-36
+97-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:21:13-36
 98            android:exported="false" >
-98-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:22:13-37
+98-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:22:13-37
 99            <intent-filter>
-99-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:24:13-26:29
+99-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:24:13-26:29
 100                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
-100-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:25:17-94
-100-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:25:25-91
+100-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:25:17-94
+100-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:25:25-91
 101            </intent-filter>
 102
 103            <meta-data
-103-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:28:13-30:36
+103-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:28:13-30:36
 104                android:name="photopicker_activity:0:required"
-104-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:29:17-63
+104-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:29:17-63
 105                android:value="" />
-105-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:30:17-33
+105-->[:image_picker_android] /home/micro/Desktop/Repos-Git/Side_Projects/Farmora/build/image_picker_android/intermediates/merged_manifest/debug/AndroidManifest.xml:30:17-33
 106        </service>
 107
 108        <activity

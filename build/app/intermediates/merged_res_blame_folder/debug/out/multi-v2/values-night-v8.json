@@ -4,7 +4,7 @@
             "outputFile": "com.example.famora.app-mergeDebugResources-26:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
-                    "source": "/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/res/values-night/styles.xml",
+                    "source": "/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/res/values-night/styles.xml",
                     "from": {
                         "startLines": "3,14",
                         "startColumns": "4,4",

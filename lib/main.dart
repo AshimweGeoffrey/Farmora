@@ -15,8 +15,9 @@ class FarmoraApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Farmora',
+      debugShowCheckedModeBanner: false, // Remove the debug banner
       theme: ThemeData(
-        primaryColor: Color(0xFF1E886), // Light dark blue
+        primaryColor: Color(0xFF1E88E5), // Light dark blue
         colorScheme: ColorScheme.fromSwatch().copyWith(
           secondary: Color(0xFF1E88E5), // Light dark blue
         ),

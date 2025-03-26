@@ -129,25 +129,6 @@
                     }
                 },
                 {
-                    "source": "/home/micro/Desktop/Repos-Git/Side_Projects/backup/Farmora/android/app/src/main/res/values/styles.xml",
-                    "from": {
-                        "startLines": "3,14",
-                        "startColumns": "4,4",
-                        "startOffsets": "173,818",
-                        "endLines": "7,16",
-                        "endColumns": "12,12",
-                        "endOffsets": "476,982"
-                    },
-                    "to": {
-                        "startLines": "182,186",
-                        "startColumns": "4,4",
-                        "startOffsets": "11016,11197",
-                        "endLines": "185,188",
-                        "endColumns": "12,12",
-                        "endOffsets": "11192,11361"
-                    }
-                },
-                {
                     "source": "/home/micro/.gradle/caches/transforms-3/12d0e8d71b0600cec5ba2edcf29e905c/transformed/lifecycle-runtime-2.7.0/res/values/values.xml",
                     "from": {
                         "startLines": "2",
@@ -198,6 +179,25 @@
                         "startOffsets": "6643,7652",
                         "endColumns": "41,59",
                         "endOffsets": "6680,7707"
+                    }
+                },
+                {
+                    "source": "/home/micro/Desktop/Repos-Git/Side_Projects/Farmora/android/app/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "3,14",
+                        "startColumns": "4,4",
+                        "startOffsets": "173,818",
+                        "endLines": "7,16",
+                        "endColumns": "12,12",
+                        "endOffsets": "476,982"
+                    },
+                    "to": {
+                        "startLines": "182,186",
+                        "startColumns": "4,4",
+                        "startOffsets": "11016,11197",
+                        "endLines": "185,188",
+                        "endColumns": "12,12",
+                        "endOffsets": "11192,11361"
                     }
                 }
             ]
