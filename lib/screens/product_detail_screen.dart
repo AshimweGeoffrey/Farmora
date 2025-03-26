@@ -1,202 +1,231 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:farmora/models/product.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:farmora/screens/product_form_screen.dart';
 import 'package:intl/intl.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Product product;
+  final Color _primaryColor = Color(0xFF1E88E5);
+  final Color _accentColor = Color(0xFF26A69A);
 
-  const ProductDetailScreen({Key? key, required this.product}) : super(key: key);
+  ProductDetailScreen({required this.product});
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = Color(0xFF1E88E5);
-    final Color accentColor = Color(0xFF26A69A);
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(product.name),
-        backgroundColor: primaryColor,
-      ),
-      body: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero image with optimization
-            Hero(
-              tag: 'product_image_${product.id}',
-              child: CachedNetworkImage(
-                imageUrl: product.imageUrl,
-                width: double.infinity,
-                height: 250,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[300],
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: Icon(Icons.error),
+      backgroundColor: Colors.white,
+      body: CustomScrollView(
+        slivers: [
+          // App bar with product image
+          SliverAppBar(
+            expandedHeight: 300,
+            pinned: true,
+            backgroundColor: _primaryColor,
+            flexibleSpace: FlexibleSpaceBar(
+              background: GestureDetector(
+                onTap: () => _showFullSizeImage(context),
+                child: Hero(
+                  tag: 'product-image-${product.id}',
+                  child: product.imageUrl.startsWith('http')
+                      ? Image.network(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => 
+                              Container(
+                                color: Colors.grey[200],
+                                child: Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                              ),
+                        )
+                      : Image.file(
+                          File(product.imageUrl),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => 
+                              Container(
+                                color: Colors.grey[200],
+                                child: Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                              ),
+                        ),
                 ),
               ),
             ),
-            
-            // Product details
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.edit),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductFormScreen(product: product),
+                    ),
+                  );
+                  if (result == true) {
+                    Navigator.pop(context, true);
+                  }
+                },
+              ),
+            ],
+          ),
+          
+          // Product details
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name and price
+                  // Product name
+                  Text(
+                    product.name,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  
+                  // Price and date
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          product.name,
-                          style: TextStyle(
-                            fontSize: 24, 
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: accentColor,
+                          color: _accentColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           '\$${product.price.toStringAsFixed(2)}',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
                             fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Rating
-                  Row(
-                    children: [
-                      ...List.generate(5, (index) {
-                        return Icon(
-                          index < product.rating.floor()
-                              ? Icons.star
-                              : (index == product.rating.floor() && 
-                                 product.rating % 1 > 0)
-                                  ? Icons.star_half
-                                  : Icons.star_border,
-                          color: Colors.amber,
-                          size: 20,
-                        );
-                      }),
-                      SizedBox(width: 8),
-                      Text(
-                        product.rating.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Category and origin
-                  Row(
-                    children: [
-                      Icon(Icons.category, size: 16, color: Colors.grey[700]),
+                      Spacer(),
+                      Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                       SizedBox(width: 4),
                       Text(
-                        product.category,
+                        DateFormat('MMM d, yyyy').format(product.createdAt),
                         style: TextStyle(
-                          color: Colors.grey[700],
                           fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Icon(Icons.location_on, size: 16, color: Colors.grey[700]),
-                      SizedBox(width: 4),
-                      Text(
-                        product.origin,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 14,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 24),
                   
-                  // Date
-                  Text(
-                    'Added on ${DateFormat('MMMM d, yyyy').format(product.createdAt)}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                  
-                  Divider(height: 32),
-                  
-                  // Description title
+                  // Description header
                   Text(
                     'Description',
                     style: TextStyle(
-                      fontSize: 20, 
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
                   SizedBox(height: 8),
                   
                   // Description
-                  Text(
-                    product.description,
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: Colors.black87,
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Text(
+                      product.description,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black54,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                   SizedBox(height: 24),
                   
-                  // Add to cart button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Added to cart!'),
-                            backgroundColor: accentColor,
+                  // Interaction hint
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: _primaryColor),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Tap on the image to view in full screen',
+                            style: TextStyle(color: _primaryColor),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductFormScreen(product: product),
+            ),
+          );
+          if (result == true) {
+            Navigator.pop(context, true);
+          }
+        },
+        backgroundColor: _primaryColor,
+        child: Icon(Icons.edit),
+      ),
+    );
+  }
+
+  void _showFullSizeImage(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          body: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Center(
+              child: InteractiveViewer(
+                panEnabled: true,
+                boundaryMargin: EdgeInsets.all(20),
+                minScale: 0.5,
+                maxScale: 4,
+                child: Hero(
+                  tag: 'full-image-${product.id}',
+                  child: product.imageUrl.startsWith('http')
+                      ? Image.network(
+                          product.imageUrl,
+                          errorBuilder: (context, error, stackTrace) => 
+                              Icon(Icons.image_not_supported, size: 100, color: Colors.white),
+                        )
+                      : Image.file(
+                          File(product.imageUrl),
+                          errorBuilder: (context, error, stackTrace) => 
+                              Icon(Icons.image_not_supported, size: 100, color: Colors.white),
+                        ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

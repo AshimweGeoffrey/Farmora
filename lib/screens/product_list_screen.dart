@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:farmora/models/product.dart';
 import 'package:farmora/services/database_helper.dart';
@@ -5,149 +6,48 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:farmora/screens/product_detail_screen.dart';
 import 'package:farmora/screens/product_form_screen.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class ProductListScreen extends StatefulWidget {
   @override
   _ProductListScreenState createState() => _ProductListScreenState();
 }
 
-class _ProductListScreenState extends State<ProductListScreen> with AutomaticKeepAliveClientMixin {
+class _ProductListScreenState extends State<ProductListScreen> {
   final DatabaseHelper _databaseHelper = DatabaseHelper();
   List<Product> _products = [];
   bool _isLoading = true;
   final Color _primaryColor = Color(0xFF1E88E5);
   final Color _accentColor = Color(0xFF26A69A);
   
-  // Pagination variables
-  int _currentPage = 0;
-  final int _itemsPerPage = 10;
-  bool _hasMoreItems = true;
-  final ScrollController _scrollController = ScrollController();
-  String? _selectedCategory;
-  
-  // Categories for filtering
-  final List<String> _categories = [
-    'All',
-    'vegetables',
-    'fruits',
-    'dairy',
-    'herbs',
-    'grains'
-  ];
-  
-  @override
-  bool get wantKeepAlive => true; // Keep alive for better performance when navigating
-  
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_scrollListener);
-    _loadProducts();
-  }
-  
-  @override
-  void dispose() {
-    _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
-    super.dispose();
-  }
-  
-  void _scrollListener() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 &&
-        !_isLoading &&
-        _hasMoreItems) {
-      _loadMoreProducts();
-    }
+    _refreshProducts();
   }
 
-  Future<void> _loadProducts() async {
+  Future<void> _refreshProducts() async {
     setState(() {
       _isLoading = true;
-      _currentPage = 0;
-      _products = [];
     });
     
     try {
-      // Modified to use compatible pagination parameters or none if not supported
-      final products = await _databaseHelper.getProducts(
-        category: _selectedCategory != 'All' ? _selectedCategory : null,
-      );
-      
-      // Apply pagination manually
-      final paginatedProducts = products.length > _itemsPerPage 
-          ? products.sublist(0, _itemsPerPage) 
-          : products;
-      
+      final products = await _databaseHelper.getProducts();
       setState(() {
-        _products = paginatedProducts;
-        _hasMoreItems = products.length > _itemsPerPage;
+        _products = products;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      _showErrorSnackBar('Error loading products: $e');
-    }
-  }
-  
-  Future<void> _loadMoreProducts() async {
-    if (_isLoading || !_hasMoreItems) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final nextPage = _currentPage + 1;
-      // Get all products and paginate manually
-      final allProducts = await _databaseHelper.getProducts(
-        category: _selectedCategory != 'All' ? _selectedCategory : null,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading products: $e')),
       );
-      
-      final startIndex = nextPage * _itemsPerPage;
-      final endIndex = startIndex + _itemsPerPage;
-      
-      setState(() {
-        if (startIndex < allProducts.length) {
-          final moreProducts = allProducts.length > endIndex 
-              ? allProducts.sublist(startIndex, endIndex) 
-              : allProducts.sublist(startIndex);
-              
-          _products.addAll(moreProducts);
-          _currentPage = nextPage;
-          _hasMoreItems = endIndex < allProducts.length;
-        } else {
-          _hasMoreItems = false;
-        }
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorSnackBar('Error loading more products: $e');
     }
-  }
-  
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
-  }
-
-  void _filterByCategory(String? category) {
-    setState(() {
-      _selectedCategory = category == 'All' ? null : category;
-    });
-    _loadProducts();
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -157,266 +57,39 @@ class _ProductListScreenState extends State<ProductListScreen> with AutomaticKee
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: _loadProducts,
+            onPressed: _refreshProducts,
           ),
           IconButton(
             icon: Icon(Icons.add),
-            onPressed: _navigateToProductForm,
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProductFormScreen()),
+              );
+              if (result == true) {
+                _refreshProducts();
+              }
+            },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildCategoryFilter(),
-          Expanded(
-            child: _isLoading && _products.isEmpty
-                ? Center(child: CircularProgressIndicator(color: _primaryColor))
-                : _products.isEmpty
-                    ? _buildEmptyState()
-                    : _buildProductList(),
-          ),
-        ],
-      ),
+      body: _isLoading 
+          ? Center(child: CircularProgressIndicator(color: _primaryColor))
+          : _products.isEmpty
+              ? _buildEmptyState()
+              : _buildProductList(),
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToProductForm,
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ProductFormScreen()),
+          );
+          if (result == true) {
+            _refreshProducts();
+          }
+        },
         backgroundColor: _primaryColor,
         child: Icon(Icons.add),
-      ),
-    );
-  }
-  
-  Widget _buildCategoryFilter() {
-    return Container(
-      height: 50,
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        padding: EdgeInsets.symmetric(horizontal: 8),
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          final isSelected = 
-              (category == 'All' && _selectedCategory == null) ||
-              category == _selectedCategory;
-          
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip(
-              label: Text(category),
-              selected: isSelected,
-              selectedColor: _primaryColor,
-              onSelected: (selected) {
-                if (selected) {
-                  _filterByCategory(category == 'All' ? null : category);
-                }
-              },
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildProductList() {
-    return RefreshIndicator(
-      onRefresh: _loadProducts,
-      color: _primaryColor,
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(8),
-        itemCount: _products.length + (_hasMoreItems ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _products.length) {
-            return _buildLoadingIndicator();
-          }
-          
-          return _buildProductCard(_products[index]);
-        },
-      ),
-    );
-  }
-  
-  Widget _buildLoadingIndicator() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    );
-  }
-  
-  Widget _buildProductCard(Product product) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Slidable(
-        endActionPane: ActionPane(
-          motion: ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (context) => _editProduct(product),
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              icon: Icons.edit,
-              label: 'Edit',
-            ),
-            SlidableAction(
-              onPressed: (context) => _deleteProduct(product.id!),
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              icon: Icons.delete,
-              label: 'Delete',
-            ),
-          ],
-        ),
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProductDetailScreen(product: product),
-              ),
-            );
-          },
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-                child: Hero(
-                  tag: 'product_image_${product.id}',
-                  child: CachedNetworkImage(
-                    imageUrl: product.imageUrl,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[300],
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[300],
-                      child: Icon(Icons.error),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              product.name,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Chip(
-                            label: Text(
-                              '\$${product.price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            backgroundColor: _accentColor,
-                            padding: EdgeInsets.zero,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        product.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Origin: ${product.origin}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 16,
-                              ),
-                              SizedBox(width: 2),
-                              Text(
-                                product.rating.toString(),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.category,
-                            size: 12,
-                            color: Colors.grey[600],
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            product.category,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Spacer(),
-                          Text(
-                            DateFormat('MMM d').format(product.createdAt),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -438,7 +111,15 @@ class _ProductListScreenState extends State<ProductListScreen> with AutomaticKee
           ),
           SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: _navigateToProductForm,
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProductFormScreen()),
+              );
+              if (result == true) {
+                _refreshProducts();
+              }
+            },
             icon: Icon(Icons.add),
             label: Text('Add Product'),
             style: ElevatedButton.styleFrom(
@@ -454,37 +135,276 @@ class _ProductListScreenState extends State<ProductListScreen> with AutomaticKee
     );
   }
 
-  Future<void> _navigateToProductForm() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ProductFormScreen()),
+  Widget _buildProductList() {
+    return ListView.builder(
+      itemCount: _products.length,
+      padding: EdgeInsets.all(12),
+      itemBuilder: (context, index) {
+        final product = _products[index];
+        return Slidable(
+          key: Key(product.id.toString()),
+          startActionPane: ActionPane(
+            motion: ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductFormScreen(product: product),
+                    ),
+                  );
+                  if (result == true) {
+                    _refreshProducts();
+                  }
+                },
+                backgroundColor: _accentColor,
+                foregroundColor: Colors.white,
+                icon: Icons.edit,
+                label: 'Edit',
+              ),
+            ],
+          ),
+          endActionPane: ActionPane(
+            motion: ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) {
+                  _showDeleteConfirmationDialog(product);
+                },
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                icon: Icons.delete,
+                label: 'Delete',
+              ),
+            ],
+          ),
+          child: Card(
+            elevation: 2,
+            margin: EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            color: Colors.white,
+            child: InkWell(
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailScreen(product: product),
+                  ),
+                );
+                if (result == true) {
+                  _refreshProducts();
+                }
+              },
+              onDoubleTap: () {
+                _showFullSizeImage(context, product.imageUrl);
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Column(
+                children: [
+                  // Product image
+                  ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        _showFullSizeImage(context, product.imageUrl);
+                      },
+                      child: Hero(
+                        tag: 'product-image-${product.id}',
+                        child: Container(
+                          width: double.infinity,
+                          height: 180,
+                          child: product.imageUrl.startsWith('http')
+                              ? Image.network(
+                                  product.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => 
+                                      Container(
+                                        color: Colors.grey[200],
+                                        child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                                      ),
+                                )
+                              : Image.file(
+                                  File(product.imageUrl),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => 
+                                      Container(
+                                        color: Colors.grey[200],
+                                        child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                                      ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Product details
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                product.name,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: _accentColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '\$${product.price.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          product.description.length > 80
+                              ? '${product.description.substring(0, 80)}...'
+                              : product.description,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              DateFormat('MMM d, yyyy').format(product.createdAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Icon(Icons.edit, size: 16, color: _accentColor),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Swipe to edit',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _accentColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
-    if (result == true) {
-      _loadProducts();
-    }
   }
 
-  Future<void> _editProduct(Product product) async {
-    final result = await Navigator.push(
-      context,
+  void _showFullSizeImage(BuildContext context, String imageUrl) {
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ProductFormScreen(product: product),
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black87,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4,
+              child: imageUrl.startsWith('http')
+                  ? Image.network(
+                      imageUrl,
+                      errorBuilder: (context, error, stackTrace) => 
+                          Icon(Icons.image_not_supported, size: 100, color: Colors.white),
+                    )
+                  : Image.file(
+                      File(imageUrl),
+                      errorBuilder: (context, error, stackTrace) => 
+                          Icon(Icons.image_not_supported, size: 100, color: Colors.white),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
-    if (result == true) {
-      _loadProducts();
-    }
   }
 
-  Future<void> _deleteProduct(int id) async {
-    try {
-      await _databaseHelper.deleteProduct(id);
-      _loadProducts();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Product deleted successfully')),
-      );
-    } catch (e) {
-      _showErrorSnackBar('Error deleting product: $e');
-    }
+  void _showDeleteConfirmationDialog(Product product) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text('Delete Product'),
+          content: Text(
+            'Are you sure you want to delete ${product.name}?',
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel', style: TextStyle(color: Colors.grey[700])),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete', style: TextStyle(color: Colors.redAccent)),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  await _databaseHelper.deleteProduct(product.id!);
+                  _refreshProducts();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${product.name} deleted'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting product: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
