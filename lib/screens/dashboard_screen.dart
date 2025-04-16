@@ -1,31 +1,40 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:farmora/screens/calculator_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:async';
 import 'package:farmora/screens/product_list_screen.dart';
+import 'package:farmora/services/profile_service.dart';
+import 'package:farmora/models/profile_model.dart';
+import 'package:farmora/screens/contacts_screen.dart';
+import 'package:farmora/screens/profile_edit_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
+  final bool isDarkMode;
+  final Function(bool) onThemeChanged;
+  
+  const DashboardScreen({
+    required this.isDarkMode,
+    required this.onThemeChanged,
+    Key? key,
+  }) : super(key: key);
+
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   // Modern color palette
-  static final Color _primaryColor = Color(0xFF1E88E5); // Light blue
-  static final Color _secondaryColor = Color(0xFF26A69A); // Teal
-  static final Color _accentColor = Color(0xFF42A5F5); // Lighter blue
-  static final Color _errorColor = Color(0xFFE53935); // Red
-  static final Color _successColor = Color(0xFF43A047); // Green
-  static final Color _warningColor = Color(0xFFFFA000); // Amber
-  static final Color _infoColor = Color(0xFF29B6F6); // Light blue
-  static final Color _neutralColor = Color(0xFF78909C); // Blue-grey
+  static const Color _primaryColor = Color(0xFF1E88E5); // Light blue
+  static const Color _secondaryColor = Color(0xFF26A69A); // Teal
+  static const Color _accentColor = Color(0xFF42A5F5); // Lighter blue
+  static const Color _errorColor = Color(0xFFE53935); // Red
+  static const Color _successColor = Color(0xFF43A047); // Green
+  static const Color _neutralColor = Color(0xFF78909C); // Blue-grey
 
   int _selectedIndex = 0;
-  final Battery _battery = Battery();
-  int _batteryLevel = 0;
-  BatteryState _batteryState = BatteryState.full;
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   ConnectivityResult _connectionStatus = ConnectivityResult.none;
   bool _isBluetoothOn = false;
@@ -33,13 +42,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<ScanResult> _bluetoothDevices = [];
   StreamSubscription<List<ScanResult>>? _scanResultsSubscription;
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
+  Profile? _userProfile;
+  bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
+    _isDarkMode = widget.isDarkMode;
     _initConnectivity();
-    _initBatteryMonitoring();
     _initBluetoothMonitoring();
+    _loadProfile();
+  }
+  
+  Future<void> _loadProfile() async {
+    final profile = await ProfileService.getProfile();
+    setState(() {
+      _userProfile = profile;
+    });
+  }
+
+  void _toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+    widget.onThemeChanged(_isDarkMode);
   }
 
   @override
@@ -77,516 +103,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  // Initialize battery monitoring
-  Future<void> _initBatteryMonitoring() async {
+  // Initialize bluetooth monitoring
+  void _initBluetoothMonitoring() async {
     try {
-      final batteryLevel = await _battery.batteryLevel;
-      final batteryState = await _battery.batteryState;
-
-      if (!mounted) return;
-
-      setState(() {
-        _batteryLevel = batteryLevel;
-        _batteryState = batteryState;
-      });
-
-      _battery.onBatteryStateChanged.listen((BatteryState state) {
+      _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
         if (!mounted) return;
         setState(() {
-          _batteryState = state;
+          _isBluetoothOn = state == BluetoothAdapterState.on;
         });
-        _updateBatteryLevel();
-      });
-
-      // Set up periodic battery level updates
-      Timer.periodic(Duration(minutes: 1), (_) => _updateBatteryLevel());
-    } catch (e) {
-      debugPrint('Battery monitoring error: $e');
-    }
-  }
-
-  Future<void> _updateBatteryLevel() async {
-    try {
-      final batteryLevel = await _battery.batteryLevel;
-      if (!mounted) return;
-      setState(() {
-        _batteryLevel = batteryLevel;
-      });
-    } catch (e) {
-      debugPrint('Battery level update error: $e');
-    }
-  }
-
-  // Initialize Bluetooth monitoring
-  Future<void> _initBluetoothMonitoring() async {
-    // Initialize adapter state monitoring
-    _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
-      if (!mounted) return;
-      setState(() {
-        _isBluetoothOn = state == BluetoothAdapterState.on;
-        // If Bluetooth was just turned on and we're not already scanning, start a scan
-        if (_isBluetoothOn && !_isScanning) {
+        // Start scanning if bluetooth is turned on
+        if (state == BluetoothAdapterState.on && !_isScanning) {
           _startBluetoothScan();
         }
       });
-    });
-
-    try {
-      // Check initial Bluetooth state
-      final adapterState = await FlutterBluePlus.adapterState.first;
-      setState(() {
-        _isBluetoothOn = adapterState == BluetoothAdapterState.on;
-      });
-
-      // Start scanning if Bluetooth is on
-      if (_isBluetoothOn) {
-        _startBluetoothScan();
-      }
     } catch (e) {
-      debugPrint('Bluetooth initialization error: $e');
+      debugPrint('Failed to monitor Bluetooth state: $e');
     }
   }
 
-  // Start Bluetooth scan
-  Future<void> _startBluetoothScan() async {
-    if (_isScanning) {
-      return;
-    }
+  void _startBluetoothScan() async {
+    try {
+      setState(() {
+        _isScanning = true;
+        _bluetoothDevices = [];
+      });
 
-    setState(() {
-      _isScanning = true;
-      _bluetoothDevices = [];
-    });
-
-    // Cancel previous subscription if exists
-    await _scanResultsSubscription?.cancel();
-
-    // Listen to scan results
-    _scanResultsSubscription = FlutterBluePlus.scanResults.listen(
-      (results) {
+      _scanResultsSubscription?.cancel();
+      _scanResultsSubscription = FlutterBluePlus.scanResults.listen((results) {
         if (!mounted) return;
         setState(() {
           _bluetoothDevices = results;
         });
-      },
-      onError: (e) {
+      }, onError: (e) {
         debugPrint('Scan error: $e');
-        setState(() {
-          _isScanning = false;
-        });
-      },
-      onDone: () {
-        setState(() {
-          _isScanning = false;
-        });
-      },
-    );
+      });
 
-    try {
-      // Start the scan with a timeout
       await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+      
+      setState(() {
+        _isScanning = false;
+      });
     } catch (e) {
-      debugPrint('Start scan error: $e');
+      debugPrint('Failed to scan for Bluetooth devices: $e');
       setState(() {
         _isScanning = false;
       });
     }
   }
 
-  // Toggle Bluetooth on/off
-  Future<void> _toggleBluetooth() async {
-    try {
-      if (_isBluetoothOn) {
-        // Android cannot programmatically disable Bluetooth, we can only prompt the user
-        await FlutterBluePlus.turnOff();
-      } else {
-        await FlutterBluePlus.turnOn();
-      }
-    } catch (e) {
-      debugPrint('Toggle Bluetooth error: $e');
-    }
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  // Network connectivity status card
-  Widget _buildNetworkStatusCard() {
-    IconData icon;
-    String status;
-    Color color;
-
-    switch (_connectionStatus) {
-      case ConnectivityResult.wifi:
-        icon = Icons.wifi;
-        status = 'Wi-Fi Connected';
-        color = _successColor;
-        break;
-      case ConnectivityResult.mobile:
-        icon = Icons.signal_cellular_alt;
-        status = 'Mobile Data Connected';
-        color = _accentColor;
-        break;
-      case ConnectivityResult.ethernet:
-        icon = Icons.settings_ethernet;
-        status = 'Ethernet Connected';
-        color = _secondaryColor;
-        break;
-      case ConnectivityResult.bluetooth:
-        icon = Icons.bluetooth;
-        status = 'Connected via Bluetooth';
-        color = _primaryColor;
-        break;
-      case ConnectivityResult.none:
-      default:
-        icon = Icons.signal_wifi_off;
-        status = 'No Internet Connection';
-        color = _errorColor;
-        break;
-    }
-
-    return _buildStatusCard(
-      title: 'Network Status',
-      icon: icon,
-      content: status,
-      color: color,
-      onTap: _initConnectivity,
-    );
-  }
-
-  // Battery status card
-  Widget _buildBatteryStatusCard() {
-    IconData icon;
-    String status;
-    Color color;
-
-    // Determine battery icon and color based on level and state
-    if (_batteryLevel >= 80) {
-      icon = Icons.battery_full;
-      color = _successColor;
-    } else if (_batteryLevel >= 50) {
-      icon = Icons.battery_6_bar;
-      color = _secondaryColor;
-    } else if (_batteryLevel >= 15) {
-      icon = Icons.battery_3_bar;
-      color = _warningColor;
-    } else {
-      icon = Icons.battery_alert;
-      color = _errorColor;
-    }
-
-    // Handle charging state
-    if (_batteryState == BatteryState.charging) {
-      icon = Icons.battery_charging_full;
-      status = 'Charging - $_batteryLevel%';
-      color = _infoColor;
-    } else {
-      status = 'Battery - $_batteryLevel%';
-    }
-
-    return _buildStatusCard(
-      title: 'Battery Status',
-      icon: icon,
-      content: status,
-      color: color,
-      onTap: _updateBatteryLevel,
-      showProgress: false,
-      extraWidget: LinearProgressIndicator(
-        value: _batteryLevel / 100,
-        backgroundColor: Colors.grey[200],
-        valueColor: AlwaysStoppedAnimation<Color>(color),
-      ),
-    );
-  }
-
-  // Bluetooth status card
-  Widget _buildBluetoothStatusCard() {
-    IconData icon;
-    String status;
-    Color color;
-
-    if (_isScanning) {
-      icon = Icons.bluetooth_searching;
-      status = 'Scanning for devices...';
-      color = _accentColor;
-    } else if (_isBluetoothOn) {
-      icon = Icons.bluetooth_connected;
-      status = 'Bluetooth On';
-      color = _primaryColor;
-    } else {
-      icon = Icons.bluetooth_disabled;
-      status = 'Bluetooth Off';
-      color = _neutralColor;
-    }
-
-    return _buildStatusCard(
-      title: 'Bluetooth Status',
-      icon: icon,
-      content: status,
-      color: color,
-      onTap: _isScanning
-          ? () {}
-          : (_isBluetoothOn ? _startBluetoothScan : _toggleBluetooth),
-      showProgress: _isScanning,
-      extraWidget: _isBluetoothOn && _bluetoothDevices.isNotEmpty
-          ? Container(
-              height: _bluetoothDevices.length > 3 ? 180 : 110,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount:
-                    _bluetoothDevices.length > 3 ? 3 : _bluetoothDevices.length,
-                itemBuilder: (context, index) {
-                  final device = _bluetoothDevices[index].device;
-                  return ListTile(
-                    dense: true,
-                    title: Text(
-                      device.platformName.isNotEmpty
-                          ? device.platformName
-                          : device.remoteId.str.substring(0, 8),
-                      style: TextStyle(color: Colors.black87),
-                    ),
-                    subtitle: Text(
-                      'Signal: ${_bluetoothDevices[index].rssi} dBm',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                    leading: Icon(
-                        _bluetoothDevices[index].advertisementData.connectable
-                            ? Icons.bluetooth_connected
-                            : Icons.bluetooth,
-                        size: 20,
-                        color: _bluetoothDevices[index]
-                                .advertisementData
-                                .connectable
-                            ? _secondaryColor
-                            : _neutralColor),
-                  );
-                },
-              ),
-            )
-          : null,
-    );
-  }
-
-  // Generic status card builder
-  Widget _buildStatusCard({
-    required String title,
-    required IconData icon,
-    required String content,
-    required Color color,
-    required VoidCallback onTap,
-    bool showProgress = false,
-    Widget? extraWidget,
-  }) {
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Icon(Icons.refresh, size: 20, color: _accentColor),
-                ],
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(icon, color: color, size: 32),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      content,
-                      style: TextStyle(fontSize: 16, color: color),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (showProgress)
-                    SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(_accentColor),
-                      ),
-                    ),
-                ],
-              ),
-              if (extraWidget != null) ...[
-                SizedBox(height: 12),
-                extraWidget,
-              ],
-            ],
-          ),
+  Widget _buildProfileSection() {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ProfileEditScreen()),
+        );
+        _loadProfile(); // Refresh profile after editing
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
-      ),
-    );
-  }
-
-  // Products card for quick access
-  Widget _buildProductsCard() {
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ProductListScreen()),
-          );
-        },
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Products',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Icon(Icons.shopping_cart, size: 20, color: _secondaryColor),
-                ],
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(Icons.inventory_2, color: _secondaryColor, size: 32),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'Manage your product inventory',
-                      style: TextStyle(fontSize: 16, color: Colors.black54),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Icon(Icons.arrow_forward, color: _accentColor),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Home screen content
-  Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'System Status',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          SizedBox(height: 20),
-          _buildNetworkStatusCard(),
-          SizedBox(height: 16),
-          _buildBatteryStatusCard(),
-          SizedBox(height: 16),
-          _buildBluetoothStatusCard(),
-          SizedBox(height: 28),
-          Text(
-            'Dashboard Content',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          SizedBox(height: 20),
-          _buildProductsCard(),
-          SizedBox(height: 16),
-          // Additional dashboard content
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            color: Colors.white,
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ProductListScreen()),
-                );
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () async {
+                final newPicturePath = await ProfileService.updateProfilePicture();
+                if (newPicturePath != null) {
+                  setState(() {
+                    if (_userProfile != null) {
+                      _userProfile!.profilePicturePath = newPicturePath;
+                    }
+                  });
+                }
               },
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.shopping_cart,
-                      color: _secondaryColor,
-                      size: 40,
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Product Management',
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    backgroundImage: _userProfile?.profilePicturePath != null
+                        ? FileImage(File(_userProfile!.profilePicturePath!))
+                        : null,
+                    child: _userProfile?.profilePicturePath == null
+                        ? Text(
+                            _userProfile?.name.isNotEmpty == true
+                                ? _userProfile!.name[0].toUpperCase()
+                                : 'U',
                             style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 30,
+                              color: Colors.white,
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Add, edit, and manage your products',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                          )
+                        : null,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.camera_alt,
+                        size: 16,
+                        color: Colors.white,
                       ),
                     ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: _accentColor,
-                      size: 16,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _userProfile?.name ?? 'Loading...',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    _userProfile?.email ?? 'Loading...',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    _userProfile?.phoneNumber ?? 'Loading...',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.edit),
+          ],
+        ),
       ),
     );
   }
@@ -594,126 +253,232 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text('Dashboard'),
-        backgroundColor: _primaryColor,
-        elevation: 0,
-        leading: Builder(
-          builder: (BuildContext context) {
-            return IconButton(
-              icon: Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
+        title: Text('Farmora Dashboard'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
+            onPressed: _toggleTheme,
+          ),
+        ],
       ),
-      drawer: Drawer(
-        child: Container(
-          color: Colors.white,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              UserAccountsDrawerHeader(
-                accountName: Text('User Name'),
-                accountEmail: Text('user@example.com'),
-                currentAccountPicture: CircleAvatar(
-                  backgroundImage: AssetImage('assets/profile_photo.png'),
-                  backgroundColor: _accentColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileSection(),
+              SizedBox(height: 24),
+              Text(
+                'Quick Actions',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [_primaryColor, _secondaryColor],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              ),
+              SizedBox(height: 16),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                children: [
+                  _buildActionCard(
+                    title: 'Products',
+                    icon: Icons.shopping_bag,
+                    color: _primaryColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProductListScreen()),
+                      );
+                    },
                   ),
-                ),
+                  _buildActionCard(
+                    title: 'Calculator',
+                    icon: Icons.calculate,
+                    color: _secondaryColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CalculatorScreen()),
+                      );
+                    },
+                  ),
+                  _buildActionCard(
+                    title: 'Contacts',
+                    icon: Icons.contacts,
+                    color: _accentColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ContactsScreen()),
+                      );
+                    },
+                  ),
+                  _buildActionCard(
+                    title: 'Profile',
+                    icon: Icons.person,
+                    color: _neutralColor,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfileEditScreen()),
+                      );
+                    },
+                  ),
+                ],
               ),
-              ListTile(
-                leading: Icon(Icons.home, color: _primaryColor),
-                title: Text('Home', style: TextStyle(color: Colors.black87)),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.shopping_cart, color: _secondaryColor),
-                title: Text('Products', style: TextStyle(color: Colors.black87)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ProductListScreen()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.calculate, color: _accentColor),
-                title: Text('Calculator', style: TextStyle(color: Colors.black87)),
-                onTap: () {
-                  Navigator.pushNamed(context, '/calculator');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.info, color: _secondaryColor),
-                title: Text('About Us', style: TextStyle(color: Colors.black87)),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.verified_user, color: _infoColor),
-                title: Text('Version 1.0.0',
-                    style: TextStyle(color: Colors.black87)),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
+              SizedBox(height: 24),
+              _buildStatusSection(),
             ],
           ),
         ),
       ),
-      body: _selectedIndex == 0
-          ? _buildHomeContent()
-          : _selectedIndex == 1
-              ? CalculatorScreen()
-              : Center(
-                  child: Text('Economics Page',
-                      style: TextStyle(color: Colors.black87, fontSize: 18))),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calculate),
-            label: 'Calculator',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.show_chart),
-            label: 'Economics',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: _primaryColor,
-        unselectedItemColor: _neutralColor,
-        backgroundColor: Colors.white,
-        onTap: _onItemTapped,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context, 
-            MaterialPageRoute(builder: (context) => ProductListScreen())
-          );
-        },
-        backgroundColor: _primaryColor,
-        child: Icon(Icons.add_shopping_cart),
-        tooltip: 'Manage Products',
+    );
+  }
+  
+  Widget _buildActionCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 48, color: color),
+            SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+  
+  Widget _buildStatusSection() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'System Status',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 12),
+          _buildStatusItem(
+            icon: Icons.wifi,
+            title: 'Network',
+            value: _getConnectionStatus(),
+            color: _getConnectionColor(),
+          ),
+          SizedBox(height: 8),
+          _buildStatusItem(
+            icon: Icons.bluetooth,
+            title: 'Bluetooth',
+            value: _isBluetoothOn ? 'Connected' : 'Disconnected',
+            color: _isBluetoothOn ? _successColor : _errorColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusItem({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _getConnectionStatus() {
+    switch (_connectionStatus) {
+      case ConnectivityResult.wifi:
+        return 'WiFi Connected';
+      case ConnectivityResult.mobile:
+        return 'Mobile Data Connected';
+      case ConnectivityResult.ethernet:
+        return 'Ethernet Connected';
+      case ConnectivityResult.bluetooth:
+        return 'Bluetooth Connected';
+      case ConnectivityResult.none:
+        return 'No Connection';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  Color _getConnectionColor() {
+    switch (_connectionStatus) {
+      case ConnectivityResult.none:
+        return _errorColor;
+      default:
+        return _successColor;
+    }
   }
 }

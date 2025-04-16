@@ -1,45 +1,75 @@
 import 'package:flutter/material.dart';
-import 'package:farmora/screens/login_screen.dart';
-import 'package:farmora/screens/signup_screen.dart';
-import 'package:farmora/screens/welcome_screen.dart';
 import 'package:farmora/screens/dashboard_screen.dart';
-import 'package:farmora/screens/calculator_screen.dart';
-import 'package:farmora/screens/product_list_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(FarmoraApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Get theme preference
+  final prefs = await SharedPreferences.getInstance();
+  final isDarkMode = prefs.getBool('darkMode') ?? false;
+  
+  runApp(MyApp(isDarkMode: isDarkMode));
 }
 
-class FarmoraApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  final bool isDarkMode;
+  
+  const MyApp({required this.isDarkMode, Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late bool _isDarkMode;
+  
+  @override
+  void initState() {
+    super.initState();
+    _isDarkMode = widget.isDarkMode;
+    
+    // Listen for theme changes
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('darkMode', _isDarkMode);
+    });
+  }
+  
+  void _toggleTheme(bool isDark) {
+    setState(() {
+      _isDarkMode = isDark;
+    });
+    
+    // Save theme preference
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('darkMode', _isDarkMode);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Farmora',
-      debugShowCheckedModeBanner: false, // Remove the debug banner
-      theme: ThemeData(
-        primaryColor: Color(0xFF1E88E5), // Light dark blue
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: Color(0xFF1E88E5), // Light dark blue
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Color(0xFFE3F2FD), // Light blue background
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none,
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          hintStyle: TextStyle(color: Colors.grey),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.light().copyWith(
+        primaryColor: const Color(0xFF1E88E5),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E88E5),
+          foregroundColor: Colors.white,
         ),
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => WelcomeScreen(),
-        '/login': (context) => LoginScreen(),
-        '/signup': (context) => SignupScreen(),
-        '/dashboard': (context) => DashboardScreen(),
-        '/calculator': (context) => CalculatorScreen(),
-        '/products': (context) => ProductListScreen(),
-      },
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Colors.indigo,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: DashboardScreen(
+        isDarkMode: _isDarkMode,
+        onThemeChanged: _toggleTheme,
+      ),
     );
   }
 }
