@@ -12,7 +12,7 @@ class WelcomeScreen extends StatelessWidget {
             children: [
               SizedBox(height: 50),
               Text(
-                'APX',
+                'Farmora',
                 style: TextStyle(
                   fontFamily: 'Abnes',
                   fontSize: 24,
